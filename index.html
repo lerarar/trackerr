@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Мои таблетки - Полный трекер с выбором даты</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app {
+            max-width: 750px;
+            width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            padding: 1.8rem 1.5rem 2rem;
+        }
+
+        h1 {
+            font-size: 1.7rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem 0;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sub {
+            color: #475569;
+            border-left: 3px solid #94a3b8;
+            padding-left: 12px;
+            margin: 8px 0 20px 0;
+            font-size: 0.85rem;
+        }
+
+        /* выбранная дата */
+        .selected-date-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            display: inline-block;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* карточка с кругами */
+        .pill-tracker {
+            background: #f8fafc;
+            border-radius: 2rem;
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 1.5rem;
+        }
+
+        .pill-card {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem 0.5rem;
+            transition: transform 0.1s ease;
+            border: 1px solid #eef2ff;
+        }
+
+        .pill-name {
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pill-time {
+            font-size: 0.75rem;
+            background: #eef2ff;
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 20px;
+            color: #1e40af;
+            margin-bottom: 1rem;
+        }
+
+        .pill-circle {
+            width: 130px;
+            height: 130px;
+            margin: 0.5rem auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #f1f5f9;
+            border: 3px solid #cbd5e1;
+        }
+
+        .pill-circle.taken {
+            background: #22c55e;
+            border-color: #15803d;
+            color: white;
+        }
+
+        .pill-circle:active {
+            transform: scale(0.96);
+        }
+
+        .status-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .status-symbol {
+            font-size: 2.2rem;
+            font-weight: bold;
+        }
+
+        /* календарь */
+        .calendar-section {
+            margin-top: 1rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-title {
+            font-weight: 600;
+            font-size: 1.3rem;
+            margin: 0;
+        }
+
+        .month-nav button {
+            background: #e2e8f0;
+            border: none;
+            font-size: 1.2rem;
+            padding: 4px 12px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0 4px;
+        }
+
+        .month-nav button:hover {
+            background: #cbd5e1;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            background: #fff;
+            border-radius: 1.2rem;
+        }
+
+        .weekday {
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 8px 4px;
+            color: #334155;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+            background: #f9f9ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.05s linear;
+            border: 1px solid transparent;
+            color: #0f172a;
+        }
+
+        .calendar-day.other-month {
+            color: #94a3b8;
+            background: #fefefe;
+        }
+
+        .calendar-day.marked {
+            background: #86efac;
+            border-color: #15803d;
+            color: #14532d;
+            font-weight: bold;
+        }
+
+        .calendar-day.selected {
+            background: #3b82f6;
+            border-color: #1e3a8a;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
+        }
+
+        .calendar-day.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .footer-info {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1rem;
+        }
+
+        @media (max-width: 500px) {
+            .app {
+                padding: 1rem;
+            }
+            .pill-circle {
+                width: 100px;
+                height: 100px;
+            }
+            .pill-name {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <h1>💊 Мои таблетки <small>трекер</small></h1>
+    <div class="sub">
+        📅 Выбери любой день в календаре (март 2026 - декабрь 2028)<br>
+        ✅ Нажми на круг, чтобы отметить приём
+    </div>
+
+    <!-- Информация о выбранной дате -->
+    <div style="text-align: center; margin-bottom: 0.5rem;">
+        <span class="selected-date-badge" id="selectedDateDisplay">📅 сегодня</span>
+    </div>
+
+    <!-- ГЛАВНЫЙ БЛОК: две таблетки -->
+    <div class="pill-tracker">
+        <div class="pill-row">
+            <!-- Ламотриджин утро -->
+            <div class="pill-card">
+                <div class="pill-name">Ламотриджин</div>
+                <div class="pill-time">🌅 УТРО</div>
+                <div class="pill-circle" id="lamotrigine-circle">
+                    <div class="status-symbol" id="lam-symbol">⭕</div>
+                    <div class="status-text" id="lam-status-text">Не принято</div>
+                </div>
+            </div>
+
+            <!-- Феварин вечер -->
+            <div class="pill-card">
+                <div class="pill-name">Феварин</div>
+                <div class="pill-time">🌙 ВЕЧЕР</div>
+                <div class="pill-circle" id="fluvoxamine-circle">
+                    <div class="status-symbol" id="fluv-symbol">⭕</div>
+                    <div class="status-text" id="fluv-status-text">Не принято</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- КАЛЕНДАРЬ с марта 2026 до 2028 -->
+    <div class="calendar-section">
+        <div class="calendar-header">
+            <div class="calendar-title">📅 Календарь приёмов</div>
+            <div class="month-nav">
+                <button id="prevMonthBtn">◀</button>
+                <span id="currentMonthYear" style="font-weight:500; min-width: 120px; text-align:center;"></span>
+                <button id="nextMonthBtn">▶</button>
+            </div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div style="font-size: 0.7rem; margin-top: 12px; text-align: center; color: #2d6a4f;">
+            🟢 Зелёный — есть отметка (хотя бы одна таблетка)<br>
+            🔵 Синий — выбранный день
+        </div>
+    </div>
+    <div class="footer-info">
+        Все данные хранятся в браузере. Можно отмечать таблетки за любой день с марта 2026 по декабрь 2028.
+    </div>
+</div>
+
+<script>
+    // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+    const STORAGE_KEY = "pill_diary_v3";
+    
+    // Ограничения: с 1 марта 2026 до 31 декабря 2028
+    const MIN_DATE = new Date(2026, 2, 1);  // март 2026 (месяц 2 = март)
+    const MAX_DATE = new Date(2028, 11, 31); // декабрь 2028
+    
+    // Текущая выбранная дата (по умолчанию сегодня, но в пределах диапазона)
+    let selectedDate = new Date();
+    // Приводим сегодня к корректному диапазону
+    if (selectedDate < MIN_DATE) selectedDate = new Date(MIN_DATE);
+    if (selectedDate > MAX_DATE) selectedDate = new Date(MAX_DATE);
+    
+    let currentCalendarYear = selectedDate.getFullYear();
+    let currentCalendarMonth = selectedDate.getMonth();
+    
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    function formatDateKey(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    function parseDateKey(dateKey) {
+        const [year, month, day] = dateKey.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    }
+    
+    function isDateInRange(date) {
+        return date >= MIN_DATE && date <= MAX_DATE;
+    }
+    
+    function getDefaultDate() {
+        const now = new Date();
+        if (now < MIN_DATE) return new Date(MIN_DATE);
+        if (now > MAX_DATE) return new Date(MAX_DATE);
+        return now;
+    }
+    
+    // Загрузка всех данных
+    function loadAllData() {
+        let stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return {};
+        try {
+            return JSON.parse(stored);
+        } catch(e) {
+            return {};
+        }
+    }
+    
+    function saveAllData(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+    
+    // Получить статус для конкретной даты
+    function getDayStatus(date) {
+        const data = loadAllData();
+        const key = formatDateKey(date);
+        if (!data[key]) return { lam: false, fluv: false };
+        return { lam: data[key].lam || false, fluv: data[key].fluv || false };
+    }
+    
+    // Установить статус для выбранной даты
+    function setPillTaken(pillType) {
+        const key = formatDateKey(selectedDate);
+        const data = loadAllData();
+        
+        if (!data[key]) {
+            data[key] = { lam: false, fluv: false };
+        }
+        
+        if (pillType === 'lam') {
+            data[key].lam = true;
+        } else if (pillType === 'fluv') {
+            data[key].fluv = true;
+        }
+        
+        saveAllData(data);
+        updateMainUIForDate(selectedDate);
+        renderCalendar(currentCalendarYear, currentCalendarMonth);
+    }
+    
+    // Снять отметку
+    function removePillTaken(pillType) {
+        const key = formatDateKey(selectedDate);
+        const data = loadAllData();
+        
+        if (!data[key]) return;
+        
+        if (pillType === 'lam') {
+            data[key].lam = false;
+        } else if (pillType === 'fluv') {
+            data[key].fluv = false;
+        }
+        
+        // Если оба false, удаляем запись
+        if (!data[key].lam && !data[key].fluv) {
+            delete data[key];
+        }
+        
+        saveAllData(data);
+        updateMainUIForDate(selectedDate);
+        renderCalendar(currentCalendarYear, currentCalendarMonth);
+    }
+    
+    // Обновить главный блок для указанной даты
+    function updateMainUIForDate(date) {
+        const status = getDayStatus(date);
+        const dateStr = formatDateKey(date);
+        const [year, month, day] = dateStr.split('-');
+        const displayDate = `${day}.${month}.${year}`;
+        document.getElementById('selectedDateDisplay').innerHTML = `📅 ${displayDate}`;
+        
+        // Ламотриджин
+        const lamCircle = document.getElementById('lamotrigine-circle');
+        const lamSymbol = document.getElementById('lam-symbol');
+        const lamText = document.getElementById('lam-status-text');
+        
+        if (status.lam) {
+            lamCircle.classList.add('taken');
+            lamSymbol.innerHTML = '✓';
+            lamText.innerText = 'Принято ✅';
+        } else {
+            lamCircle.classList.remove('taken');
+            lamSymbol.innerHTML = '⭕';
+            lamText.innerText = 'Не принято';
+        }
+        
+        // Феварин
+        const fluvCircle = document.getElementById('fluvoxamine-circle');
+        const fluvSymbol = document.getElementById('fluv-symbol');
+        const fluvText = document.getElementById('fluv-status-text');
+        
+        if (status.fluv) {
+            fluvCircle.classList.add('taken');
+            fluvSymbol.innerHTML = '✓';
+            fluvText.innerText = 'Принято ✅';
+        } else {
+            fluvCircle.classList.remove('taken');
+            fluvSymbol.innerHTML = '⭕';
+            fluvText.innerText = 'Не принято';
+        }
+    }
+    
+    // Проверка, есть ли отметка за день (для подсветки календаря)
+    function isDayMarked(year, month, day) {
+        const checkDate = new Date(year, month, day);
+        if (!isDateInRange(checkDate)) return false;
+        const status = getDayStatus(checkDate);
+        return status.lam || status.fluv;
+    }
+    
+    // Проверка, выбран ли этот день
+    function isDaySelected(year, month, day) {
+        return selectedDate.getFullYear() === year && 
+               selectedDate.getMonth() === month && 
+               selectedDate.getDate() === day;
+    }
+    
+    // Рендер календаря
+    function renderCalendar(year, month) {
+        const firstDayOfMonth = new Date(year, month, 1);
+        const startWeekday = firstDayOfMonth.getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        const calendarGrid = document.getElementById('calendarGrid');
+        calendarGrid.innerHTML = '';
+        
+        // Заголовки дней недели (Пн, Вт, ...)
+        const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        for (let i = 0; i < 7; i++) {
+            const weekdayDiv = document.createElement('div');
+            weekdayDiv.className = 'weekday';
+            weekdayDiv.innerText = weekdays[i];
+            calendarGrid.appendChild(weekdayDiv);
+        }
+        
+        // Смещение для понедельника как первого дня
+        let startOffset = (startWeekday === 0 ? 6 : startWeekday - 1);
+        let dayCounter = 1;
+        let totalCells = 42;
+        
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'calendar-day';
+            
+            let cellYear = year;
+            let cellMonth = month;
+            let cellDay = null;
+            let isDisabled = false;
+            
+            if (i < startOffset) {
+                // прошлый месяц
+                const prevMonthDate = new Date(year, month, 0);
+                const daysPrevMonth = prevMonthDate.getDate();
+                const prevDay = daysPrevMonth - (startOffset - i) + 1;
+                cellDay = prevDay;
+                let prevMonthIndex = month - 1;
+                let prevYear = year;
+                if (prevMonthIndex < 0) {
+                    prevMonthIndex = 11;
+                    prevYear = year - 1;
+                }
+                cellYear = prevYear;
+                cellMonth = prevMonthIndex;
+                cell.innerText = prevDay;
+                cell.classList.add('other-month');
+            } 
+            else if (dayCounter <= daysInMonth) {
+                cellDay = dayCounter;
+                cell.innerText = dayCounter;
+                dayCounter++;
+            } 
+            else {
+                // следующий месяц
+                let nextMonthDay = dayCounter - daysInMonth;
+                cellDay = nextMonthDay;
+                let nextMonthIndex = month + 1;
+                let nextYear = year;
+                if (nextMonthIndex > 11) {
+                    nextMonthIndex = 0;
+                    nextYear = year + 1;
+                }
+                cellYear = nextYear;
+                cellMonth = nextMonthIndex;
+                cell.innerText = nextMonthDay;
+                cell.classList.add('other-month');
+                dayCounter++;
+            }
+            
+            // Проверяем, входит ли дата в диапазон (март 2026 - дек 2028)
+            const cellDate = new Date(cellYear, cellMonth, cellDay);
+            if (!isDateInRange(cellDate)) {
+                isDisabled = true;
+                cell.classList.add('disabled');
+            } else {
+                // Отметка о приёме
+                if (isDayMarked(cellYear, cellMonth, cellDay)) {
+                    cell.classList.add('marked');
+                }
+                // Выбранный день
+                if (isDaySelected(cellYear, cellMonth, cellDay)) {
+                    cell.classList.add('selected');
+                }
+            }
+            
+            // Клик по дню
+            if (!isDisabled) {
+                cell.addEventListener('click', (function(y, m, d) {
+                    return function() {
+                        const newDate = new Date(y, m, d);
+                        if (isDateInRange(newDate)) {
+                            selectedDate = newDate;
+                            updateMainUIForDate(selectedDate);
+                            renderCalendar(currentCalendarYear, currentCalendarMonth);
+                        }
+                    };
+                })(cellYear, cellMonth, cellDay));
+            }
+            
+            calendarGrid.appendChild(cell);
+        }
+        
+        document.getElementById('currentMonthYear').innerText = `${year}年 ${month+1}月`;
+    }
+    
+    // Переключение месяца с учётом границ (с марта 2026 до декабря 2028)
+    function changeMonth(delta) {
+        let newYear = currentCalendarYear;
+        let newMonth = currentCalendarMonth + delta;
+        
+        if (newMonth < 0) {
+            newMonth = 11;
+            newYear--;
+        } else if (newMonth > 11) {
+            newMonth = 0;
+            newYear++;
+        }
+        
+        // Проверяем, есть ли хоть один день в этом месяце в диапазоне
+        const firstOfMonth = new Date(newYear, newMonth, 1);
+        const lastOfMonth = new Date(newYear, newMonth + 1, 0);
+        
+        if (lastOfMonth < MIN_DATE || firstOfMonth > MAX_DATE) {
+            // Весь месяц вне диапазона - не переключаем
+            return;
+        }
+        
+        currentCalendarYear = newYear;
+        currentCalendarMonth = newMonth;
+        renderCalendar(currentCalendarYear, currentCalendarMonth);
+    }
+    
+    // Обработчики кликов по кругам
+    function bindPillEvents() {
+        const lamCircle = document.getElementById('lamotrigine-circle');
+        const fluvCircle = document.getElementById('fluvoxamine-circle');
+        
+        lamCircle.addEventListener('click', () => {
+            const currentStatus = getDayStatus(selectedDate);
+            if (!currentStatus.lam) {
+                setPillTaken('lam');
+            } else {
+                if (confirm("Снять отметку о приёме Ламотриджина за этот день?")) {
+                    removePillTaken('lam');
+                }
+            }
+        });
+        
+        fluvCircle.addEventListener('click', () => {
+            const currentStatus = getDayStatus(selectedDate);
+            if (!currentStatus.fluv) {
+                setPillTaken('fluv');
+            } else {
+                if (confirm("Снять отметку о приёме Феварина за этот день?")) {
+                    removePillTaken('fluv');
+                }
+            }
+        });
+    }
+    
+    // Инициализация
+    function init() {
+        bindPillEvents();
+        
+        // Устанавливаем выбранную дату (сегодня или ближайшую доступную)
+        const defaultDate = getDefaultDate();
+        selectedDate = defaultDate;
+        
+        // Устанавливаем текущий месяц календаря
+        currentCalendarYear = selectedDate.getFullYear();
+        currentCalendarMonth = selectedDate.getMonth();
+        
+        updateMainUIForDate(selectedDate);
+        renderCalendar(currentCalendarYear, currentCalendarMonth);
+        
+        document.getElementById('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
+        document.getElementById('nextMonthBtn').addEventListener('click', () => changeMonth(1));
+    }
+    
+    init();
+</script>
+</body>
+</html>
